@@ -1,0 +1,97 @@
+﻿@using ACM.ACM_Models;
+@using MauiApp1.Data;
+@using ACM.Models;
+@using ACM.Coupon.Operations;
+<div style="display:inline-block; border:solid; border-radius: 5px; border-width: 1px; margin: .5em; margin-left: 0; padding: .1em; box-shadow: .4em .3em rgba(0,0,0,.3); background-color:aliceblue " >
+	<select @onchange="@((e) => currentItem.ItemName = e.Value as string ?? "")">
+		@foreach (var dep in FutureDbService._departments.OrderBy((d) => d.DepartmentName).ToList()) {
+			var items = FutureDbService._departmentItems[dep.DepartmentName];
+			<optgroup label="@dep.DepartmentName"></optgroup>
+			@foreach (var item in items)
+			{
+				@if (item.ItemName == currentItem.ItemName)
+				{
+					<option value="@item.ItemName" selected>&nbsp&nbsp @item.ItemName</option>
+				}
+				else
+				{
+					<option value="@item.ItemName">&nbsp&nbsp @item.ItemName</option>
+				}
+			}
+		}
+	</select>
+
+	<select form="@form" @bind=@currentItem.Operation>
+		<optgroup label="Discount Types"></optgroup>
+		@foreach (var op in ACM.Coupon.Operations.OperationNames.operationTypes)
+		{
+			@if (op == currentItem.Operation) {
+				<option value="@op" selected>@op</option>
+			} else {
+				<option value="@op">@op</option>
+			}
+		}
+	</select>
+
+	@if(currentItem.Operation == "discount-percent"){
+		<div style="display:inline-block">%</div><input 
+			type="number" 
+			min="0" 
+			step="1" 
+			value="@currentItem.Amount"
+			form="@form" 
+			style="height: 1.3em"
+			@onchange="@((e) =>
+			{
+				currentItem.Amount = long.Parse(e.Value as string ?? "0");
+			})" 
+		/>
+	}else{
+		<div style="display:inline-block">$</div><input 
+			type="number" 
+			min="0.00" 
+			step="0.01"		
+			value="@formatCurrency(currentItem.Amount)"
+			form="@form" 
+			style="height: 1.3em"
+			@onchange="@((e) =>
+			{
+				currentItem.Amount = (long)((float.Parse(e.Value as string ?? "0"))*100);
+			})" 
+		/>
+	}
+	
+	
+	<button type="button" style="margin: .2em; font-weight: bold; border-width: .02em; border-radius: .25em; width: 1.5em" title="Remove Item" onclick="@(() => {
+		RuleService.RemoveExistingCouponRuleItem(currentItem);
+		parent.Refresh();
+	})">-</button>
+</div>
+<br />
+
+
+@code {
+
+	[Parameter]
+	public ACM.ACM_Models.CouponItem? currentItem { get; set; }
+	[Parameter]
+	public ACM.ACM_Models.CouponRule? couponRule { get; set; }
+	[Parameter]
+	public string? form { get; set; }
+	[Parameter]
+	public RuleItemList parent { get; set; }
+
+	public float amount { get; set; }
+
+	private float longToFloat(long amount){
+
+		return (float)(amount) / 100f;
+	}
+
+	private string formatCurrency(long amount ){
+		var t = longToFloat(amount);
+		return t.ToString("F2");
+	}
+
+
+}

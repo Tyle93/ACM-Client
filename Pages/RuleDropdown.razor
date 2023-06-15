@@ -1,0 +1,163 @@
+﻿@page "/"
+@using ACM.ACM_Models;
+@using MauiApp1.Data;
+@using ACM.Models;
+@using System.ServiceProcess;
+@using System.Diagnostics;
+
+<div style="display:inline-block; width:100%" >
+	<h3 style="display:inline-block">Rules</h3>
+
+	<div style="margin-right: 0;float:right">
+		<button type="button" style="border-radius:.4em; border-width: .12em" @onclick="@((e) => {
+			RuleService.CreateNewCouponRule();
+			StateHasChanged();
+			RefreshChildren();
+		})">New Rule</button>
+		<button type="button" style="border-radius:.4em; border-width: .12em" @onclick="@((e) => RuleService.SaveRuleChanges())">Save Changes</button>
+		<button type="button" style="border-radius:.4em; border-width: .12em" @onclick="@((e) => {
+			RuleService.RemoveRule();
+			StateHasChanged();
+			RefreshChildren();
+		})">Delete Rule</button>
+	</div>
+</div>
+
+<form name="rules" >
+	<select @onchange="LoadRule" name="Rule Selector" form="rules">
+		@{
+			List<CouponRule> inactiveRules = new List<CouponRule>();
+		}
+		<optgroup label="Active Rules">
+			@foreach (var rule in RuleService.rules)
+			{
+				if (!BitConverter.ToBoolean(rule.IsActive)){
+					inactiveRules.Add(rule);
+					continue;
+				}
+				if (rule.Name == RuleService.currentRule.Name)
+				{
+					<option style="" value="@rule.Id" selected>&nbsp&nbsp @rule.Name</option>
+				}
+				else
+				{
+					<option style="" value="@rule.Id" >&nbsp&nbsp @rule.Name</option>
+				}
+			}
+		</optgroup>
+		<optgroup label="Inactive Rules">
+			@foreach(var rule in inactiveRules){
+				if (rule.Name == RuleService.currentRule.Name)
+				{
+					<option style="" value="@rule.Id" selected>&nbsp&nbsp @rule.Name</option>
+				}
+				else
+				{
+					<option style="" value="@rule.Id" >&nbsp&nbsp @rule.Name</option>
+				}
+			}
+		</optgroup>
+
+	</select>
+	
+	<label for="isActive">Active</label>
+	<select  @onchange="@((e) => RuleService.currentRule.IsActive = BitConverter.GetBytes(bool.Parse(e.Value as string)))">
+		@if(BitConverter.ToBoolean(RuleService.currentRule.IsActive)){
+			<option value="True" selected>Yes</option>
+			<option value="False">No</option>
+		}else{
+			<option value="True">Yes</option>
+			<option value="False" selected>No</option>
+		}
+	</select>
+
+	<div>
+		<label for="ruleName" style="display:block">Rule Name</label>
+		<input id="ruleName" @bind="RuleService.currentRule.Name" name="ruleId" type="text" size="100rem" style="display:block; border-radius: .4em; border-width: .05em; text-indent: .2em" form="rules"></input>
+	</div>
+
+	
+	<div style="width:100%; display:flex; margin-top: .1em; margin-bottom: .4em">
+		<div style="margin-right: .4em">
+			<label for="ruleNotes" style="display:block">Rule Notes</label>
+			<textarea id="ruleNotes" @bind="RuleService.currentRule.Notes" name="ruleNotes" rows="10" cols="50" style="display:block;border-radius: .4em; border-width: .05em; text-indent: .2em" form="rules"></textarea>
+		</div>
+		<div>
+			<label for="receiptComment" style="display:inline-block">Receipt Comment</label>
+			<input type="text" @bind="RuleService.currentRule.ReceiptName" style="display:block; border-radius: .4em; border-width: .05em;text-indent: .2em"rows="1" cols="20" maxlength="12" ></input>
+		</div>
+	</div>
+	<div style="display:flex; flex-direction: row; ">
+		<div style="margin-top:.3em; margin-right: .3em">
+			<RuleScheduleList @ref="@scheduleList"></RuleScheduleList>
+		</div>
+		<div style="margin-top:.3em">
+			<RuleItemList @ref="@ruleList"></RuleItemList>	
+		</div>
+	</div>
+
+	<br />
+
+</form>
+
+
+@code {
+	private RuleItemList? ruleList { get; set; }
+	private RuleScheduleList? scheduleList { get; set; }
+	private string ruleId { get; set; }
+	private void LoadRule(ChangeEventArgs e){
+		if(e.Value as string is not null){
+			ruleId = e.Value as string;
+			RuleService.LoadRule(ruleId!);
+			StateHasChanged();
+			RefreshChildren();
+		}
+	}
+	private List<ACM.ACM_Models.CouponItem>? GetCouponItems(string? ruleId){
+		return RuleService.GetCouponItems(ruleId);
+	}	
+
+	private void RefreshChildren(){
+		ruleList.Refresh();
+		scheduleList.Refresh();
+	}
+
+	protected override void OnInitialized()
+	{
+		base.OnInitialized();
+		CheckService();
+		
+	}
+
+	protected override void OnAfterRender(bool firstRender)
+	{
+		base.OnAfterRender(firstRender);
+		//CheckService();
+	}
+
+	private async void CheckService()
+	{
+		
+		if (!ServiceController.GetServices().Any((service) => service.ServiceName.Equals("ACM Service")))
+		{
+			
+			//("ACM Service is not installed. Please install service before attempting to start the client.");
+			await Application.Current.MainPage.DisplayAlert("Service Error", "ACM Service is not installed. Please install service before attempting to start the client.", "Ok");
+			System.Environment.Exit(1);
+		}
+		ServiceController controller = new("ACM Service");
+		if (controller.Status != ServiceControllerStatus.Running)
+		{
+			try
+			{
+				controller.Start();
+				controller.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromSeconds(10));
+			}
+			catch (System.ServiceProcess.TimeoutException e)
+			{
+
+				Console.Error.WriteLine("ACM Service Failed to start.");
+			}
+		}
+	}
+}

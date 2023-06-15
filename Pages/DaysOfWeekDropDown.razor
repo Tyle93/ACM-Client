@@ -1,0 +1,26 @@
+﻿@using ACM.ACM_Models
+
+<div style="display:inline-block">
+	<select value="@currentSchedule.DayIndex" @onchange="@((e) => 
+		{
+			currentSchedule.DayIndex = Int32.Parse(e.Value as string);
+			parent.Refresh();
+		})">
+		<option value=-1> </option>
+		<option value=0>Sunday</option>
+		<option value=1>Monday</option>
+		<option value=2>Tuesday</option>
+		<option value=3>Wednesday</option>
+		<option value=4>Thursday</option>
+		<option value=5>Friday</option>
+		<option value=6>Saturday</option>
+	</select>
+</div>
+
+@code {
+	private List<string> daysOfWeek = new List<string> { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+	[Parameter]
+	public CouponDailyAvailability currentSchedule { get; set; }
+	[Parameter]
+	public ScheduleItem parent { get; set; }
+}

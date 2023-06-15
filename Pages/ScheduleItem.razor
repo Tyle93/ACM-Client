@@ -1,0 +1,51 @@
+﻿@using MauiApp1.Data;
+@using ACM.ACM_Models
+
+<div style="display:inline-block; border:solid; border-radius: .3em; border-width: .12em; padding: .5em; margin: .2em;  box-shadow: .4em .3em rgba(0,0,0,.3); background-color:aliceblue; ">
+	<div style="display:inline-block">
+		<label for="startTime" style="display:inline-block">Start Time</label>
+		<input type="time" name="startTime" value="@startTime" style="display:inline-block" @onchange="@((e) => {
+					dailySchedule.StartHour = TimeOnly.Parse(e.Value as string).Hour;
+					dailySchedule.StartMinute = TimeOnly.Parse(e.Value as string).Minute;
+		})">
+	</div>
+	<div style="display:inline-block">
+		<label for="endTime">End Time</label>
+		<input type="time" name="endTime" value="@endTime" @onchange="@((e) => {
+					dailySchedule.EndHour = TimeOnly.Parse(e.Value as string).Hour;
+					dailySchedule.EndMinute = TimeOnly.Parse(e.Value as string).Minute;
+		})">
+	</div>
+	<DaysOfWeekDropDown currentSchedule=@dailySchedule parent=@this></DaysOfWeekDropDown>
+	<button type="button" style="margin: .2em; font-weight: bold; border-width: .02em; border-radius: .25em; width: 1.5em" title="Remove Item" onclick="@(() => {
+		RuleService.RemoveExistingCouponScheduleItem(dailySchedule);
+		parent.Refresh();
+	})">-
+	</button>
+</div>
+
+@code {
+	[Parameter]
+	public CouponDailyAvailability dailySchedule { get; set; }
+	private string startTime { get; set; }
+	private string endTime { get; set; }
+	[Parameter]
+	public RuleScheduleList parent{ get; set; }
+
+	protected override void OnParametersSet()
+	{
+		startTime = createTimeString(dailySchedule.StartMinute, dailySchedule.StartHour);
+		endTime = createTimeString(dailySchedule.EndMinute, dailySchedule.EndHour);
+	}
+
+	private string createTimeString(long minute, long hour){
+		if (minute < 0 || hour < 0) return "";
+		string time = $"{hour.ToString("D2")}:{minute.ToString("D2")}";
+		return time;
+	}
+
+	public void Refresh(){
+		StateHasChanged();
+		parent.Refresh();
+	}
+}

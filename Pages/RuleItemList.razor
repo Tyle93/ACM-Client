@@ -1,0 +1,25 @@
+﻿
+@using ACM.ACM_Models;
+@using MauiApp1.Data;
+
+<div style="border: solid 1px; border-color:black; background-color:azure; border-radius: .5em; display:table; padding: .4em" >
+	<div style="padding-top: .3em;" >
+		<div style="display:inline-block">Rule Items</div>
+		<button type="button" title="Add Item" style="margin: .2em; font-weight: bold; border-width: .02em; border-radius: .25em; " @onclick="@((e) => {
+			RuleService.CreateNewCouponRuleItem();
+			this.StateHasChanged();				
+		 })">Add New Item</button>
+	</div
+@foreach (var item in RuleService.items)
+{
+	<ItemDropdown currentItem=@item parent="@this"></ItemDropdown>
+}
+</div>
+
+
+@code {
+
+	public void Refresh(){
+		StateHasChanged();
+	}
+}

@@ -1,0 +1,20 @@
+﻿@using MauiApp1.Data;
+
+<div style="border: solid 1px; border-color:black; padding-left: .5em; background-color:azure; display:flex; flex-direction:column; border-radius: .5em; width:fit-content; padding-right: .5em; padding: .4em"  >
+	<div style="padding-top: .3em;" >
+		<div style="display:inline-block">Rule Schedule</div>
+		<button type="button" title="Add Item" style="margin: .2em; font-weight: bold; border-width: .02em; border-radius: .25em; " @onclick="@((e) => {
+			RuleService.CreateNewCouponScheduleItem();
+			this.StateHasChanged();				
+		 })">Add New Schedule</button>
+	</div
+	@foreach(var sched in RuleService.schedule.OrderBy((sched) => sched.DayIndex).ThenBy((sched) => sched.StartHour).ThenBy((sched) => sched.StartMinute).ToList()){
+		<ScheduleItem dailySchedule=@sched parent=@this></ScheduleItem>
+	}
+</div>
+
+@code {
+	public void Refresh(){
+		StateHasChanged();
+	}
+}
